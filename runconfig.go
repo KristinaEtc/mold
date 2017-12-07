@@ -9,7 +9,7 @@ type DockerRunConfig struct {
 	Image       string   // Docker image to use for code build
 	Commands    []string // Commands to run in the container
 	Workdir     string   // Working directory in the container
-	Environment []string
+	Environment []string `yaml:",omitempty"`
 	Volumes     []string `yaml:"volumes,omitempty"`
 	Save        bool     `yaml:",omitempty"` // do not remove container after completion
 	Shell       string   `yaml:",omitempty"`
