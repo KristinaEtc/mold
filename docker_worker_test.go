@@ -86,7 +86,7 @@ func Test_AppendOsEnv_onlyReplacesWhenNoEqualsFound(t *testing.T) {
 		t.Fatalf("Failed to set up test with: %v", err)
 	}
 
-	resultEnv, _ := appendOsEnv(drc.Environment)
+	resultEnv, _ := appendOsEnv(drc.Environment, drc.File)
 
 	if resultEnv[0] != "DONT_REPLACE=same" {
 		t.Errorf("Should not have replaced environment with '=' but did. Got %v", resultEnv[0])
@@ -102,7 +102,7 @@ func Test_AppendOsEnv_allowsEmptyEnvVar(t *testing.T) {
 		t.Fatalf("Failed to set up test with: %v", err)
 	}
 
-	resultEnv, _ := appendOsEnv(input)
+	resultEnv, _ := appendOsEnv(input, "")
 
 	if resultEnv[0] != "VAL=" {
 		t.Errorf("Should allow empty var declarations")
@@ -114,7 +114,7 @@ func Test_AppendOsEnv_wantedButNotProvidedError(t *testing.T) {
 		Environment: []string{"WANTED_BUT_NOT_PROVIDED"},
 	}
 
-	_, err := appendOsEnv(drc.Environment)
+	_, err := appendOsEnv(drc.Environment, "")
 
 	if err == nil {
 		t.Error("Expected an error for a value specified but not provided")

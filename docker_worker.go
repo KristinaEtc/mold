@@ -20,7 +20,10 @@ import (
 )
 
 // default timeout when trying to stop a container.
-const defaultStopTimeout int = 5
+const (
+	defaultStopTimeout int    = 5
+	defaultEnvFilename string = "file"
+)
 
 var errAborted = fmt.Errorf("aborted")
 
@@ -159,7 +162,7 @@ func assembleServiceContainers(mc *MoldConfig) ([]*ContainerConfig, error) {
 		cc.Container.Cmd = b.Commands
 		cc.Host.Binds = b.Volumes
 
-		env, err := appendOsEnv(b.Environment)
+		env, err := appendOsEnv(b.Environment, b.File)
 		if err != nil {
 			return nil, err
 		}
@@ -171,20 +174,38 @@ func assembleServiceContainers(mc *MoldConfig) ([]*ContainerConfig, error) {
 	return bcs, nil
 }
 
-func appendOsEnv(inputEnvironment []string) ([]string, error) {
-	output := make([]string, len(inputEnvironment))
+func appendOsEnv(inputEnvironment []string, envFilePrefix string) ([]string, error) {
+	output := make([]string, 0)
 
-	for i, env := range inputEnvironment {
+	if envFilePrefix == "" {
+		envFilePrefix = defaultEnvFilename
+	}
+	envFilePrefix += ":"
+
+	for _, env := range inputEnvironment {
+		envPure := strings.TrimSpace(strings.ToLower(env))
+		if envFile := strings.TrimPrefix(envPure, envFilePrefix); envFile != envPure {
+			envFromFile, err := getEnvVars(envFile)
+			if err != nil {
+				return nil, fmt.Errorf("wrong environment file value %v", env)
+			}
+
+			for _, v := range envFromFile {
+				output = append(output, v)
+			}
+			continue
+		}
+
 		if !strings.Contains(env, "=") && strings.TrimSpace(env) != "" {
 			envValue := os.Getenv(env)
 			if strings.TrimSpace(envValue) == "" {
-				return nil, fmt.Errorf("Wanted environment value %v but not found", env)
+				return nil, fmt.Errorf("wrong environment value %v", env)
 			}
 
 			newEnv := fmt.Sprintf("%v=%v", env, envValue)
-			output[i] = newEnv
+			output = append(output, newEnv)
 		} else {
-			output[i] = env
+			output = append(output, env)
 		}
 	}
 
@@ -209,16 +230,9 @@ func assembleBuildContainers(mc *MoldConfig) ([]*ContainerConfig, error) {
 		cc.Container.Volumes = map[string]struct{}{b.Workdir: struct{}{}}
 		cc.Container.Cmd = []string{b.Shell, "-cex", b.BuildCmds()}
 
-		env, err := appendOsEnv(b.Environment)
+		env, err := appendOsEnv(b.Environment, b.File)
 		if err != nil {
 			return nil, err
-		}
-
-		if b.File != "" {
-			envFromFile, err := getEnvVars(b.File)
-			if err == nil {
-				env = append(env, envFromFile...)
-			}
 		}
 		cc.Container.Env = env
 
