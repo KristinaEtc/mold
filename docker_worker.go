@@ -498,7 +498,7 @@ func (dw *DockerWorker) Teardown() error {
 				continue
 			}
 			if err = mergeErrors(err, dw.docker.RemoveImage(id, true, bImage.CleanUp)); err != nil {
-				log.Println("ERR [Teardown] Removing image %s: %s\n", bImage.Image, err.Error())
+				log.Printf("ERR [Teardown] Removing image %s: %s\n", bImage.Image, err.Error())
 			}
 		}
 	}

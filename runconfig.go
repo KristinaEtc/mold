@@ -41,12 +41,18 @@ func (cb *DockerRunConfig) GetEnvStrings() ([]string, error) {
 		}
 		vars = append(vars, efvars...)
 	}
-	vars = append(vars, cb.Environment...)
+	for _, ef := range cb.Environment {
+		efvars, err := formatEnvVar([]byte(ef))
+		if err != nil {
+			return nil, err
+		}
+		vars = append(vars, efvars)
+	}
 	return vars, nil
 }
 
 func parseEnvFile(filename string) ([]string, error) {
-	fd, err := os.Open(envFile)
+	fd, err := os.Open(filename)
 	if err != nil {
 		return nil, err
 	}
@@ -61,7 +67,7 @@ func parseEnvFile(filename string) ([]string, error) {
 			return nil, err
 		}
 		if len(l) > 0 {
-			envs = append(ls, l)
+			ls = append(ls, l)
 		}
 	}
 	return ls, nil
@@ -76,7 +82,5 @@ func formatEnvVar(evar []byte) (string, error) {
 	if len(evarStr) > 0 && !strings.HasPrefix(evarStr, "#") {
 		return evarStr, nil
 	}
-	else {
-		return "", nil
-	}
+	return "", nil
 }

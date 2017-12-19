@@ -120,14 +120,15 @@ func Test_LifeCycle_moldenv(t *testing.T) {
 	if err != nil {
 		t.Fatal(err.Error())
 	}
+	b := testMc.Build[0]
 
-	vals, err := appendOsEnv(testMc.Build[0].Environment, testMc.Build[0].File)
+	envVals, err := b.GetEnvStrings()
 	if err != nil {
 		t.Fatal(err.Error())
 	}
 
-	if len(vals) != 8 {
-		t.Fatalf("environment values: want 8; have %d\n", len(vals))
+	if len(envVals) != 8 {
+		t.Fatalf("environment values: want 8; have %d\n", len(envVals))
 	}
 }
 
