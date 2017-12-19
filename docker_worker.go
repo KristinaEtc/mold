@@ -20,10 +20,7 @@ import (
 )
 
 // default timeout when trying to stop a container.
-const (
-	defaultStopTimeout int    = 5
-	defaultEnvFilename string = "file"
-)
+const defaultStopTimeout int = 5
 
 var errAborted = fmt.Errorf("aborted")
 
@@ -161,55 +158,15 @@ func assembleServiceContainers(mc *MoldConfig) ([]*ContainerConfig, error) {
 		cc := DefaultContainerConfig(b.Image)
 		cc.Container.Cmd = b.Commands
 		cc.Host.Binds = b.Volumes
-
-		env, err := appendOsEnv(b.Environment, b.File)
+		env, err := b.GetEnvStrings()
 		if err != nil {
 			return nil, err
 		}
-
 		cc.Container.Env = env
 		cc.Name = b.Name
 		bcs[i] = cc
 	}
 	return bcs, nil
-}
-
-func appendOsEnv(inputEnvironment []string, envFilePrefix string) ([]string, error) {
-	output := make([]string, 0)
-
-	if envFilePrefix == "" {
-		envFilePrefix = defaultEnvFilename
-	}
-	envFilePrefix += ":"
-
-	for _, env := range inputEnvironment {
-		envPure := strings.TrimSpace(strings.ToLower(env))
-		if envFile := strings.TrimPrefix(envPure, envFilePrefix); envFile != envPure {
-			envFromFile, err := getEnvVars(envFile)
-			if err != nil {
-				return nil, fmt.Errorf("wrong environment file value %v", env)
-			}
-
-			for _, v := range envFromFile {
-				output = append(output, v)
-			}
-			continue
-		}
-
-		if !strings.Contains(env, "=") && strings.TrimSpace(env) != "" {
-			envValue := os.Getenv(env)
-			if strings.TrimSpace(envValue) == "" {
-				return nil, fmt.Errorf("wrong environment value %v", env)
-			}
-
-			newEnv := fmt.Sprintf("%v=%v", env, envValue)
-			output = append(output, newEnv)
-		} else {
-			output = append(output, env)
-		}
-	}
-
-	return output, nil
 }
 
 // assembleBuildContainers assembles container configs from user provided build config
@@ -230,7 +187,7 @@ func assembleBuildContainers(mc *MoldConfig) ([]*ContainerConfig, error) {
 		cc.Container.Volumes = map[string]struct{}{b.Workdir: struct{}{}}
 		cc.Container.Cmd = []string{b.Shell, "-cex", b.BuildCmds()}
 
-		env, err := appendOsEnv(b.Environment, b.File)
+		env, err := b.GetEnvStrings()
 		if err != nil {
 			return nil, err
 		}
