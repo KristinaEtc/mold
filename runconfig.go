@@ -66,6 +66,9 @@ func parseEnvFile(filename string) ([]string, error) {
 		if err != nil {
 			return nil, err
 		}
+		if strings.Contains(l, ":") {
+			l = strings.Replace(l, ":", "=", 1)
+		}
 		if len(l) > 0 {
 			ls = append(ls, l)
 		}
